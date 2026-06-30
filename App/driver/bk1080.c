@@ -78,11 +78,19 @@ void BK1080_Init(uint16_t freq, uint8_t band/*, uint8_t space*/)
 
 uint16_t BK1080_ReadRegister(BK1080_Register_t Register)
 {
-    uint8_t Value[2];
+    uint8_t Value[2] = {0xFF, 0xFF};
 
     I2C_Start();
-    I2C_Write(0x80);
-    I2C_Write((Register << 1) | I2C_READ);
+    if (I2C_Write(0x80) < 0)
+    {
+        I2C_Stop();
+        return 0xFFFF;
+    }
+    if (I2C_Write((Register << 1) | I2C_READ) < 0)
+    {
+        I2C_Stop();
+        return 0xFFFF;
+    }
     I2C_ReadBuffer(Value, sizeof(Value));
     I2C_Stop();
 
@@ -92,10 +100,22 @@ uint16_t BK1080_ReadRegister(BK1080_Register_t Register)
 void BK1080_WriteRegister(BK1080_Register_t Register, uint16_t Value)
 {
     I2C_Start();
-    I2C_Write(0x80);
-    I2C_Write((Register << 1) | I2C_WRITE);
+    if (I2C_Write(0x80) < 0)
+    {
+        I2C_Stop();
+        return;
+    }
+    if (I2C_Write((Register << 1) | I2C_WRITE) < 0)
+    {
+        I2C_Stop();
+        return;
+    }
     Value = ((Value >> 8) & 0xFF) | ((Value & 0xFF) << 8);
-    I2C_WriteBuffer(&Value, sizeof(Value));
+    if (I2C_WriteBuffer(&Value, sizeof(Value)) < 0)
+    {
+        I2C_Stop();
+        return;
+    }
     I2C_Stop();
 }
 

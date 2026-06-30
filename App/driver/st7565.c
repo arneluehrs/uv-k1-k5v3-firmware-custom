@@ -31,6 +31,8 @@
 #define PIN_CS GPIO_MAKE_PIN(GPIOB, LL_GPIO_PIN_2)
 #define PIN_A0 GPIO_MAKE_PIN(GPIOA, LL_GPIO_PIN_6)
 
+#define SPI_BYTE_TIMEOUT 10000
+
 uint8_t gStatusLine[LCD_WIDTH];
 uint8_t gFrameBuffer[FRAME_LINES][LCD_WIDTH];
 
@@ -97,13 +99,19 @@ static inline void A0_Reset()
 
 static uint8_t SPI_WriteByte(uint8_t Value)
 {
-    while (!LL_SPI_IsActiveFlag_TXE(SPIx))
+    uint32_t timeout = SPI_BYTE_TIMEOUT;
+    while (!LL_SPI_IsActiveFlag_TXE(SPIx) && --timeout)
         ;
+    if (!timeout)
+        return 0xFF;
 
     LL_SPI_TransmitData8(SPIx, Value);
 
-    while (!LL_SPI_IsActiveFlag_RXNE(SPIx))
+    timeout = SPI_BYTE_TIMEOUT;
+    while (!LL_SPI_IsActiveFlag_RXNE(SPIx) && --timeout)
         ;
+    if (!timeout)
+        return 0xFF;
 
     return LL_SPI_ReceiveData8(SPIx);
 }
