@@ -20,6 +20,7 @@
 #include "dcs.h"
 #include "driver/st7565.h"
 #include "external/printf/printf.h"
+#include "format_utils.h"
 #include "misc.h"
 #include "ui/helper.h"
 #include "ui/scanner.h"
@@ -54,7 +55,8 @@ void UI_DisplayScanner(void)
 
     // 2nd line
     if (gScanSingleFrequency || (gScanCssState != SCAN_CSS_STATE_OFF && gScanCssState != SCAN_CSS_STATE_FAILED)) {
-        sprintf(String, "Freq:%u.%05u", gScanFrequency / 100000, gScanFrequency % 100000);
+        strcpy(String, "Freq:");
+        FORMAT_Frequency(gScanFrequency, String + 5, 0);
         pPrintStr = String;
     } else {
         pPrintStr = "Freq:---.-----";
@@ -68,10 +70,12 @@ void UI_DisplayScanner(void)
     } else if (!gScanUseCssResult) {
         pPrintStr = "Tone:None";
     } else if (gScanCssResultType == CODE_TYPE_CONTINUOUS_TONE) {
-        sprintf(String, "CTCSS:%u.%uHz", CTCSS_Options[gScanCssResultCode] / 10, CTCSS_Options[gScanCssResultCode] % 10);
+        strcpy(String, "CTCSS:");
+        FORMAT_CTCSS(CTCSS_Options[gScanCssResultCode], String + 6, 1);
         pPrintStr = String;
     } else {
-        sprintf(String, "DCS:D%03oN", DCS_Options[gScanCssResultCode]);
+        strcpy(String, "DCS:");
+        FORMAT_DCS(DCS_Options[gScanCssResultCode], 'N', String + 4);
         pPrintStr = String;
     }
  

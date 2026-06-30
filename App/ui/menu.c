@@ -28,6 +28,7 @@
 #include "../driver/st7565.h"
 #include "../external/printf/printf.h"
 #include "../font.h"
+#include "../format_utils.h"
 #include "../frequencies.h"
 #include "../helper/battery.h"
 #include "../misc.h"
@@ -780,9 +781,9 @@ void UI_DisplayMenu(void)
             if (gSubMenuSelection == 0)
                 strcpy(String, gSubMenu_OFF_ON[0]);
             else if (gSubMenuSelection < 105)
-                sprintf(String, "D%03oN", DCS_Options[gSubMenuSelection -   1]);
+                FORMAT_DCS(DCS_Options[gSubMenuSelection -   1], 'N', String);
             else
-                sprintf(String, "D%03oI", DCS_Options[gSubMenuSelection - 105]);
+                FORMAT_DCS(DCS_Options[gSubMenuSelection - 105], 'I', String);
             break;
 
         case MENU_R_CTCS:
@@ -791,7 +792,7 @@ void UI_DisplayMenu(void)
             if (gSubMenuSelection == 0)
                 strcpy(String, gSubMenu_OFF_ON[0]);
             else
-                sprintf(String, "%u.%uHz", CTCSS_Options[gSubMenuSelection - 1] / 10, CTCSS_Options[gSubMenuSelection - 1] % 10);
+                FORMAT_CTCSS(CTCSS_Options[gSubMenuSelection - 1], String, 1);
             break;
         }
 
@@ -959,7 +960,7 @@ void UI_DisplayMenu(void)
                 if (valid && !gAskForConfirmation)
                 {   // show the frequency so that the user knows the channels frequency
                     const uint32_t frequency = SETTINGS_FetchChannelFrequency(gSubMenuSelection);
-                    sprintf(String, "%u.%05u", frequency / 100000, frequency % 100000);
+                    FORMAT_Frequency(frequency, String, 0);
                     UI_PrintString(String, menu_item_x1, menu_item_x2, 5, 8);
                 }
 
@@ -1020,7 +1021,7 @@ void UI_DisplayMenu(void)
 
                 if (!gAskForConfirmation)
                 {   // show the frequency so that the user knows the channels frequency
-                    sprintf(String, "%u.%05u", frequency / 100000, frequency % 100000);
+                    FORMAT_Frequency(frequency, String, 0);
                     UI_PrintString(String, menu_item_x1, menu_item_x2, 5, 8);
                 }
             }
