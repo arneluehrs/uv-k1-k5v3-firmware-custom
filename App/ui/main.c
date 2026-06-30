@@ -43,6 +43,7 @@
 #include "ui/main.h"
 #include "ui/ui.h"
 #include "audio.h"
+#include "format_utils.h"
 #include "menu.h"
 
 #ifdef ENABLE_FEAT_F4HWN
@@ -1230,7 +1231,7 @@ void UI_MAIN_TimeSlice500ms(void)
 // ----------------------------------------
 
 static void UI_FormatFrequency(uint32_t freq, char *buffer) {
-    sprintf(buffer, "%3u.%05u", freq / 100000, freq % 100000);
+    FORMAT_Frequency(freq, buffer, 3);
 }
 
 #if defined(ENABLE_SCAN_RANGES) && defined(ENABLE_FEAT_F4HWN_SCAN_SUBAUDIBLE) && ENABLE_FEAT_F4HWN_SCAN_SUBAUDIBLE
@@ -1240,13 +1241,13 @@ static void UI_PrintScanRangeCss(char *String, uint8_t LabelX, uint8_t ValueX, u
     {
         strcpy(String, "CTCSS");
         UI_PrintStringSmallNormalInverse(String, LabelX, 0, Line);
-        sprintf(String, "%u.%uHz", CTCSS_Options[gScanRangeCssCode] / 10, CTCSS_Options[gScanRangeCssCode] % 10);
+        FORMAT_CTCSS(CTCSS_Options[gScanRangeCssCode], String, 1);
     }
     else
     {
         strcpy(String, "DCS");
         UI_PrintStringSmallNormalInverse(String, LabelX, 0, Line);
-        sprintf(String, "D%03o%c", DCS_Options[gScanRangeCssCode], gScanRangeCssType == CODE_TYPE_REVERSE_DIGITAL ? 'I' : 'N');
+        FORMAT_DCS(DCS_Options[gScanRangeCssCode], gScanRangeCssType == CODE_TYPE_REVERSE_DIGITAL ? 'I' : 'N', String);
     }
 
     UI_PrintStringSmallNormal(String, ValueX, 0, Line);
@@ -1818,11 +1819,11 @@ void UI_DisplayMain(void)
                             }
                             else
                             {
-                                sprintf(String, "%03u.%05u", frequency / 100000, frequency % 100000);
+                                FORMAT_Frequency(frequency, String, 4);
                                 UI_PrintStringSmallNormal(String, 32 + 4, 0, line + 1);
                             }
 #else                           // show the channel frequency below the channel number/name
-                            sprintf(String, "%03u.%05u", frequency / 100000, frequency % 100000);
+                            FORMAT_Frequency(frequency, String, 4);
                             UI_PrintStringSmallNormal(String, 32 + 4, 0, line + 1);
 #endif
                         }
@@ -1953,16 +1954,16 @@ void UI_DisplayMain(void)
         switch((int)pConfig->CodeType)
         {
             case 1:
-            sprintf(String, "%u.%u", CTCSS_Options[pConfig->Code] / 10, CTCSS_Options[pConfig->Code] % 10);
+            FORMAT_CTCSS(CTCSS_Options[pConfig->Code], String, 0);
             break;
 
             case 2:
             case 3:
-            sprintf(String, (int)pConfig->CodeType == 2 ? "%03oN" : "%03oI", DCS_Options[pConfig->Code]);
+            FORMAT_DCS(DCS_Options[pConfig->Code], (int)pConfig->CodeType == 2 ? 'N' : 'I', String);
             break;
 
             default:
-            sprintf(String, "%d.%02uK", vfoInfo->StepFrequency / 100, vfoInfo->StepFrequency % 100);
+            FORMAT_StepFrequency(vfoInfo->StepFrequency, String);
             shift = -10;
         }
 
@@ -1980,7 +1981,7 @@ void UI_DisplayMain(void)
 
                 if((vfoInfo->StepFrequency / 100) < 100)
                 {
-                    sprintf(String, "%d.%02uK", vfoInfo->StepFrequency / 100, vfoInfo->StepFrequency % 100);
+                    FORMAT_StepFrequency(vfoInfo->StepFrequency, String);
                 }
                 else
                 {

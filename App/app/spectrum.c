@@ -23,6 +23,7 @@
 #endif
 
 #include "driver/backlight.h"
+#include "format_utils.h"
 #include "frequencies.h"
 #include "ui/helper.h"
 #include "ui/main.h"
@@ -1637,7 +1638,7 @@ static void ShowChannelName(uint32_t f)
 #endif
 
 static void FormatFrequency(uint32_t freq, char *buffer) {
-    sprintf(buffer, "%u.%05u", freq / 100000, freq % 100000);
+    FORMAT_Frequency(freq, buffer, 0);
 }
 
 static void DrawF(uint32_t f)

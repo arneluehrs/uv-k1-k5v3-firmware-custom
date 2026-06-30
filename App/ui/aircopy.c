@@ -21,6 +21,7 @@
 #include "app/aircopy.h"
 #include "driver/st7565.h"
 #include "external/printf/printf.h"
+#include "format_utils.h"
 #include "misc.h"
 #include "radio.h"
 #include "ui/aircopy.h"
@@ -55,7 +56,7 @@ void UI_DisplayAircopy(void)
 
     if (gInputBoxIndex == 0) {
         uint32_t frequency = gRxVfo->freq_config_RX.Frequency;
-        sprintf(String, "%3u.%05u", frequency / 100000, frequency % 100000);
+        FORMAT_Frequency(frequency, String, 3);
         // show the remaining 2 small frequency digits
         UI_PrintStringSmallNormal(String + 7, 97, 0, 3);
         String[7] = 0;
