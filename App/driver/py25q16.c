@@ -38,6 +38,13 @@
 #define SECTOR_SIZE 0x1000
 #define PAGE_SIZE 0x100
 
+// Timeout for DMA transfer completion (iterations)
+// At ~48MHz core clock, 500000 iterations ≈ generous upper bound for a 4KB DMA transfer
+#define SPI_DMA_TIMEOUT 500000
+
+// Timeout for SPI byte-level busy-waits
+#define SPI_BYTE_TIMEOUT 10000
+
 static uint32_t SectorCacheAddr = 0x1000000;
 static uint8_t SectorCache[SECTOR_SIZE];
 static uint8_t BlackHole[4] __attribute__((aligned(4)));
@@ -148,8 +155,17 @@ static void SPI_ReadBuf(uint8_t *Buf, uint32_t Size)
     LL_SPI_Enable(SPIx);
     LL_SPI_EnableDMAReq_TX(SPIx);
 
-    while (!TC_Flag)
+    uint32_t timeout = SPI_DMA_TIMEOUT;
+    while (!TC_Flag && --timeout)
         ;
+
+    if (!timeout)
+    {
+        LL_DMA_DisableChannel(DMA1, CHANNEL_RD);
+        LL_DMA_DisableChannel(DMA1, CHANNEL_WR);
+        LL_SPI_DisableDMAReq_TX(SPIx);
+        LL_SPI_DisableDMAReq_RX(SPIx);
+    }
 }
 
 static void SPI_WriteBuf(const uint8_t *Buf, uint32_t Size)
@@ -197,23 +213,41 @@ static void SPI_WriteBuf(const uint8_t *Buf, uint32_t Size)
     LL_SPI_Enable(SPIx);
     LL_SPI_EnableDMAReq_TX(SPIx);
 
-    while (!TC_Flag)
+    uint32_t timeout = SPI_DMA_TIMEOUT;
+    while (!TC_Flag && --timeout)
         ;
+
+    if (!timeout)
+    {
+        LL_DMA_DisableChannel(DMA1, CHANNEL_RD);
+        LL_DMA_DisableChannel(DMA1, CHANNEL_WR);
+        LL_SPI_DisableDMAReq_TX(SPIx);
+        LL_SPI_DisableDMAReq_RX(SPIx);
+    }
 }
 
 static uint8_t SPI_WriteByte(uint8_t Value)
 {
-    while (!LL_SPI_IsActiveFlag_TXE(SPIx))
+    uint32_t timeout = SPI_BYTE_TIMEOUT;
+    while (!LL_SPI_IsActiveFlag_TXE(SPIx) && --timeout)
         ;
+    if (!timeout)
+        return 0xFF;
+
     LL_SPI_TransmitData8(SPIx, Value);
-    while (!LL_SPI_IsActiveFlag_RXNE(SPIx))
+
+    timeout = SPI_BYTE_TIMEOUT;
+    while (!LL_SPI_IsActiveFlag_RXNE(SPIx) && --timeout)
         ;
+    if (!timeout)
+        return 0xFF;
+
     return LL_SPI_ReceiveData8(SPIx);
 }
 
 static void WriteAddr(uint32_t Addr);
 static uint8_t ReadStatusReg(uint32_t Which);
-static void WaitWIP();
+static bool WaitWIP();
 static void WriteEnable();
 static void SectorErase(uint32_t Addr);
 static void SectorProgram(uint32_t Addr, const uint8_t *Buf, uint32_t Size);
@@ -374,7 +408,7 @@ static uint8_t ReadStatusReg(uint32_t Which)
     return Value;
 }
 
-static void WaitWIP()
+static bool WaitWIP()
 {
     for (int i = 0; i < 1000000; i++)
     {
@@ -384,8 +418,9 @@ static void WaitWIP()
             SYSTICK_DelayUs(10);
             continue;
         }
-        break;
+        return true;
     }
+    return false;
 }
 
 static void WriteEnable()
