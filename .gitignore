@@ -12,6 +12,7 @@ compile_commands.json
 k5_eeprom.raw
 
 /build
+tests/build
 __pycache__/
 
 .DS_Store
